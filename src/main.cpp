@@ -47,10 +47,10 @@ int main() {
 
         }
 
-        auto mousePos = sf::Mouse::getPosition();
-        printf("mouse at (%f, %f)\n", mousePos.x, mousePos.y);
+        auto mousePos = sf::Mouse::getPosition(window);
+        printf("mouse at (%d, %d)\n", mousePos.x, mousePos.y);
         if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-            auto mousePos = sf::Mouse::getPosition();
+            auto mousePos = sf::Mouse::getPosition(window);
             obj.SetPosition((sf::Vector2f) mousePos);
         }
 
