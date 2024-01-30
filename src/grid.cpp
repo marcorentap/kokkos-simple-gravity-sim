@@ -23,7 +23,7 @@ PointGrid::PointGrid(int xSize, int ySize, int xCount, int yCount) {
             point.point.setPosition(x, y);
             point.point.setOrigin(1, 1);
 
-            point.line = sf::VertexArray();
+            point.line = sf::VertexArray(sf::Lines);
             point.line.append(sf::Vector2f(x, y));
             point.line.append(sf::Vector2f(x, y));
             this->points.push_back(point);
