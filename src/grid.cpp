@@ -13,8 +13,8 @@ namespace ss {
 
 PointGrid::PointGrid(int xSize, int ySize, int xCount, int yCount) {
     // 10 border
-    int xSpace = (xSize - 20) / xCount;
-    int ySpace = (ySize - 20) / yCount;
+    int xSpace = (xSize - 20) / (xCount-1);
+    int ySpace = (ySize - 20) / (yCount-1);
 
     for (int x = 10; x <= xSize - 10; x += xSpace) {
         for (int y = 10; y <= ySize - 10; y += ySpace) {
