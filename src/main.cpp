@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <vector>
+#include <Kokkos_Core.hpp>
 // #include <cstdio>
 // #include <cstdlib>
 // #include <iostream>
@@ -54,6 +55,15 @@ class GravityGrid : public ss::PointGrid {
     GravityGrid(int xSize, int ySize, int xCount, int yCount)
         : ss::PointGrid(xSize, ySize, xCount, yCount) {}
 
+    void ParallelUpdate(std::vector<MassedObject> massedObjects) {
+        int pointCount = this->points.size();
+        int objectCount = massedObjects.size();
+        printf("pointcount: %d objectCount: %d\n", pointCount, objectCount);
+
+        Kokkos::View<float *[3]> pointView("pointView", pointCount);
+        Kokkos::View<float *[3]> objectView("objectView", objectCount);
+    }
+
     void Update(std::vector<MassedObject> massedObjects) {
         for (auto &point : this->points) {
             auto &startPos = point.line[0].position;
@@ -78,7 +88,8 @@ class GravityGrid : public ss::PointGrid {
     }
 };
 
-int main() {
+int main(int argc, char *argv[]) {
+    Kokkos::ScopeGuard guard(argc, argv);
     sf::RenderWindow window(sf::VideoMode(1000, 1000), "simplesim");
 
     GravityGrid gravGrid(window.getSize().x, window.getSize().y, 80, 80);
@@ -133,6 +144,7 @@ int main() {
 
         window.clear();
         gravGrid.Update(objects);
+        gravGrid.ParallelUpdate(objects);
         gravGrid.Draw(window);
         for (auto obj : objects) {
             window.draw(obj.shape);

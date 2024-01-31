@@ -10,10 +10,13 @@ FetchContent_Declare(SFML
     GIT_TAG 2.6.x)
 FetchContent_MakeAvailable(SFML)
 
+find_package(Kokkos REQUIRED)
 include_directories(include)
 add_executable(simplesim src/grid.cpp src/main.cpp)
+target_link_libraries(simplesim PRIVATE Kokkos::kokkos)
 target_link_libraries(simplesim PRIVATE sfml-graphics)
 target_compile_features(simplesim PRIVATE cxx_std_17)
+
 
 if(WIN32)
     add_custom_command(
