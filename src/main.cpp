@@ -87,7 +87,7 @@ int main() {
         MassedObject(10, 100, sf::Vector2f(700, 300)),
         MassedObject(10, 100, sf::Vector2f(500, 500)),
     };
-    auto selectedObj = &objects[0];
+    MassedObject *selectedObj = NULL;
 
     while (window.isOpen()) {
         sf::Event event;
@@ -102,7 +102,7 @@ int main() {
                             obj.pos.x > mousePos.x - obj.shape.getRadius() &&
                             obj.pos.y > mousePos.y - obj.shape.getRadius()) {
                             selectedObj = &obj;
-                            printf("selected obj(%f, %f)\n", obj.pos.x,
+                            printf("Selected obj(%f, %f)\n", obj.pos.x,
                                    obj.pos.y);
                         }
                     }
@@ -111,7 +111,7 @@ int main() {
                 // Right click deselect object
                 if (event.mouseButton.button == sf::Mouse::Right) {
                     selectedObj = NULL;
-                    printf("No object selected\n");
+                    printf("Removed object selection\n");
                 }
             }
 
@@ -124,8 +124,10 @@ int main() {
             auto mousePos = sf::Mouse::getPosition(window);
             if (selectedObj) {
                 selectedObj->SetPosition((sf::Vector2f)mousePos);
-                printf("move obj(%f, %f) to (%d,%d)\n", selectedObj->pos.x,
+                printf("Move obj(%f, %f) to (%d,%d)\n", selectedObj->pos.x,
                        selectedObj->pos.y, mousePos.x, mousePos.y);
+            } else {
+                printf("No object selected\n");
             }
         }
 
