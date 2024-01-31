@@ -3,6 +3,7 @@
 #include "SFML/Graphics/Shape.hpp"
 #include "simplesim/grid.hpp"
 #include <Kokkos_Core.hpp>
+#include <Kokkos_Core_fwd.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/System/Vector2.hpp>
@@ -17,13 +18,35 @@
 #define G 1000000
 #define FORCEMAX 10
 
+class GravityGrid : public ss::ParallelGrid {
+  public:
+    GravityGrid(int xSize, int ySize, int xCount, int yCount)
+        : ss::ParallelGrid(xSize, ySize, xCount, yCount) {}
+
+    void Update(Kokkos::View<float *[3], Kokkos::DefaultHostExecutionSpace> objects) {
+        int pointCount = this->xCount * this->yCount;
+        for (int i = 0; i < pointCount; i++) {
+            this->points(i, 2) = this->points(i, 0) + random()%5;
+            this->points(i, 3) = this->points(i, 1) + random()%5;
+        }
+        return;
+    }
+};
+
 int main(int argc, char *argv[]) {
     Kokkos::ScopeGuard guard(argc, argv);
     sf::RenderWindow window(sf::VideoMode(WINDOW_SIZE_X, WINDOW_SIZE_Y),
                             "simplesim");
-    ss::ParallelGrid grid(WINDOW_SIZE_X, WINDOW_SIZE_Y, GRID_RESOLUTION, GRID_RESOLUTION);
-    grid.PrintPoints();
-    printf("points size %d %d\n", grid.points.extent(0), grid.points.extent(1));
+    GravityGrid grid(WINDOW_SIZE_X, WINDOW_SIZE_Y, GRID_RESOLUTION,
+                          GRID_RESOLUTION);
+    Kokkos::View<float *[3], Kokkos::DefaultHostExecutionSpace> objects("objects", 5);
+    for (int i = 0; i < 3; i++) {
+        objects(i, 0) = 100;
+        objects(i, 1) = random()%WINDOW_SIZE_X;
+        objects(i, 2) = random()%WINDOW_SIZE_Y;
+    }
+
+
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -33,6 +56,13 @@ int main(int argc, char *argv[]) {
         }
 
         window.clear();
+        grid.Update(objects);
+        for (int i = 0; i < 3; i++) {
+            sf::CircleShape circle(10, 10);
+            circle.setPosition(objects(i, 1), objects(i, 2));
+            circle.setOrigin(10, 10);
+            window.draw(circle);
+        }
         grid.Draw(window);
         window.display();
     }
