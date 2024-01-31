@@ -1,5 +1,6 @@
 #include "simplesim/grid.hpp"
 #include "SFML/Graphics/RenderTarget.hpp"
+#include <Kokkos_Core_fwd.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/VertexArray.hpp>
@@ -11,10 +12,62 @@
 
 namespace ss {
 
+void ParallelGrid::PrintPoints() const {
+    for (int i = 0; i < this->points.extent(0); i++) {
+        printf("Found points (%f, %f)\n", this->points(i, 0),
+               this->points(i, 1));
+    }
+}
+
+void ParallelGrid::Draw(sf::RenderWindow &window) const {
+    // Draw point circle
+    int pointCount = xCount*yCount;
+    for (int i = 0; i < pointCount; i++) {
+        sf::CircleShape shape(1);
+        shape.setPosition(this->points(i, 0), this->points(i,1));
+        shape.setOrigin(1,1);
+        window.draw(shape);
+    }
+}
+
+void ParallelGrid::InitializePoints() {
+    // 10 border
+    float xSpace = (xSize - 20) / (xCount - 1);
+    float ySpace = (ySize - 20) / (yCount - 1);
+    // for (int x = 0; x < xCount; x++) {
+    //     for (int y = 0; y < yCount; y++) {
+    //         int pointIndex = (xCount*y) + x;
+    //         this->points(pointIndex, 0) = 10 + (x * xSpace);
+    //         this->points(pointIndex, 1) = 10 + (y * ySpace);
+    //         this->points(pointIndex, 2) = 0;
+    //         this->points(pointIndex, 3) = 0;
+    //     }
+    // }
+    Kokkos::parallel_for(
+        "InitializePoints",
+        Kokkos::MDRangePolicy<Kokkos::Rank<2>,
+                              Kokkos::DefaultHostExecutionSpace>(
+            {0, 0}, {(int) this->xCount, (int) this->yCount}),
+        KOKKOS_LAMBDA(const int &x, const int &y) {
+            int pointIndex = (xCount*y) + x;
+            this->points(pointIndex, 0) = 10 + (x * xSpace);
+            this->points(pointIndex, 1) = 10 + (y * ySpace);
+            this->points(pointIndex, 2) = 0;
+            this->points(pointIndex, 3) = 0;
+        });
+    Kokkos::fence();
+}
+
+ParallelGrid::ParallelGrid(int xSize, int ySize, int xCount, int yCount)
+    : xSize(xSize), ySize(ySize), xCount(xCount), yCount(yCount),
+      points("ParallelGrid::Point", xCount * yCount) {
+    InitializePoints();
+}
+
 PointGrid::PointGrid(int xSize, int ySize, int xCount, int yCount) {
     // 10 border
-    int xSpace = (xSize - 20) / (xCount-1);
-    int ySpace = (ySize - 20) / (yCount-1);
+    int xSpace = (xSize - 20) / (xCount - 1);
+    int ySpace = (ySize - 20) / (yCount - 1);
 
     for (int x = 10; x <= xSize - 10; x += xSpace) {
         for (int y = 10; y <= ySize - 10; y += ySpace) {
