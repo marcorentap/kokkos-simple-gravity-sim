@@ -25,9 +25,11 @@ class GravityGrid : public ss::ParallelGrid {
 
     void Update(Kokkos::View<float *[3], Kokkos::DefaultHostExecutionSpace> objects) {
         int pointCount = this->xCount * this->yCount;
+        float offsetX = random()%20 - 10;
+        float offsetY = random()%20 - 10;
         for (int i = 0; i < pointCount; i++) {
-            this->points(i, 2) = this->points(i, 0) + random()%5;
-            this->points(i, 3) = this->points(i, 1) + random()%5;
+            this->points(i, 2) = this->points(i, 0) + offsetX;
+            this->points(i, 3) = this->points(i, 1) + offsetY;
         }
         return;
     }
