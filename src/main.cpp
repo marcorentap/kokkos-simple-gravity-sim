@@ -4,20 +4,22 @@
 #include "simplesim/grid.hpp"
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Core_fwd.hpp>
+#include <Kokkos_Macros.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <random>
 #include <vector>
 
 #define WINDOW_SIZE_X 1000
 #define WINDOW_SIZE_Y 1000
-#define GRID_RESOLUTION 80
+#define GRID_RESOLUTION 100
 #define G 1000000
 #define FORCEMAX 10
-#define OBJ_COUNT 3
+#define OBJ_COUNT 10
 #define OBJ_RADIUS 10
 
 class GravityGrid : public ss::ParallelGrid {
@@ -27,12 +29,49 @@ class GravityGrid : public ss::ParallelGrid {
 
     void Update(
         Kokkos::View<float *[3], Kokkos::DefaultHostExecutionSpace> objects) {
-        int pointCount = this->xCount * this->yCount;
-        float offsetX = random() % 20 - 10;
-        float offsetY = random() % 20 - 10;
+        int pointCount = this->points.extent(0);
+        int objectCount = objects.extent(0);
+        // (point, object) => unitX, unitY, force
+        Kokkos::View<float **[3], Kokkos::DefaultHostExecutionSpace>
+            forceHostView("forceHostView", pointCount, objectCount);
+
+        auto objectView =
+            Kokkos::create_mirror(Kokkos::DefaultExecutionSpace(), objects);
+        auto pointView = Kokkos::create_mirror(Kokkos::DefaultExecutionSpace(),
+                                               this->points);
+        auto forceView = Kokkos::create_mirror(Kokkos::DefaultExecutionSpace(),
+                                               forceHostView);
+        Kokkos::deep_copy(objectView, objects);
+        Kokkos::deep_copy(pointView, points);
+        Kokkos::deep_copy(forceView, forceHostView);
+
+        Kokkos::parallel_for(
+            "GravityGrid::Update Calculate Unit Vector",
+            Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0},
+                                                   {pointCount, objectCount}),
+            KOKKOS_LAMBDA(const int &i, const int &j) {
+                float distX = objectView(j, 0) - pointView(i, 0);
+                float distY = objectView(j, 1) - pointView(i, 1);
+                float dist =
+                    Kokkos::sqrt(Kokkos::pow(distX, 2) + Kokkos::pow(distY, 2));
+                forceView(i, j, 0) = dist ? distX / dist : 0;
+                forceView(i, j, 1) = dist ? distY / dist : 0;
+                forceView(i, j, 2) = dist ? G / Kokkos::pow(dist, 2) : 0;
+            });
+        Kokkos::deep_copy(forceHostView, forceView);
+
         for (int i = 0; i < pointCount; i++) {
-            this->points(i, 2) = this->points(i, 0) + offsetX;
-            this->points(i, 3) = this->points(i, 1) + offsetY;
+            this->points(i, 2) = this->points(i, 0);
+            this->points(i, 3) = this->points(i, 1);
+            for (int j = 0; j < objectCount; j++) {
+                float unitX = forceHostView(i, j, 0);
+                float unitY = forceHostView(i, j, 1);
+                float dist =
+                    Kokkos::sqrt(Kokkos::pow(unitX, 2) + Kokkos::pow(unitY, 2));
+                float force = forceHostView(i, j, 2);
+                this->points(i, 2) += unitX * Kokkos::fmin(FORCEMAX, force);
+                this->points(i, 3) += unitY * Kokkos::fmin(FORCEMAX, force);
+            }
         }
         return;
     }
@@ -44,12 +83,16 @@ int main(int argc, char *argv[]) {
                             "simplesim");
     GravityGrid grid(WINDOW_SIZE_X, WINDOW_SIZE_Y, GRID_RESOLUTION,
                      GRID_RESOLUTION);
+    // posX, posY, mass
     Kokkos::View<float *[3], Kokkos::DefaultHostExecutionSpace> objects(
-        "objects", 5);
+        "objects", OBJ_COUNT);
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> positionRand(100, WINDOW_SIZE_X - 100);
     for (int i = 0; i < OBJ_COUNT; i++) {
-        objects(i, 0) = 100;
-        objects(i, 1) = random() % WINDOW_SIZE_X;
-        objects(i, 2) = random() % WINDOW_SIZE_Y;
+        objects(i, 0) = positionRand(gen);
+        objects(i, 1) = positionRand(gen);
+        objects(i, 2) = 100;
     }
 
     int selectedObject = -1;
@@ -64,8 +107,8 @@ int main(int argc, char *argv[]) {
                 if (event.mouseButton.button == sf::Mouse::Left) {
                     auto mousePos = sf::Mouse::getPosition(window);
                     for (int i = 0; i < OBJ_COUNT; i++) {
-                        float objX = objects(i, 1);
-                        float objY = objects(i, 2);
+                        float objX = objects(i, 0);
+                        float objY = objects(i, 1);
                         if (objX < mousePos.x + OBJ_RADIUS &&
                             objY < mousePos.y + OBJ_RADIUS &&
                             objX > mousePos.x - OBJ_RADIUS &&
@@ -87,16 +130,16 @@ int main(int argc, char *argv[]) {
 
         // object drag
         if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-                auto mousePos = sf::Mouse::getPosition(window);
-            objects(selectedObject, 1) = mousePos.x;
-            objects(selectedObject, 2) = mousePos.y;
+            auto mousePos = sf::Mouse::getPosition(window);
+            objects(selectedObject, 0) = mousePos.x;
+            objects(selectedObject, 1) = mousePos.y;
         }
 
         window.clear();
         grid.Update(objects);
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < OBJ_COUNT; i++) {
             sf::CircleShape circle(10, 10);
-            circle.setPosition(objects(i, 1), objects(i, 2));
+            circle.setPosition(objects(i, 0), objects(i, 1));
             circle.setOrigin(10, 10);
             window.draw(circle);
         }

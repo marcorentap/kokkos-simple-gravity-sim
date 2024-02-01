@@ -22,9 +22,9 @@ void ParallelGrid::PrintPoints() const {
 void ParallelGrid::Draw(sf::RenderWindow &window) const {
     int pointCount = xCount * yCount;
     for (int i = 0; i < pointCount; i++) {
-        sf::CircleShape circle(1);
-        circle.setPosition(this->points(i, 0), this->points(i, 1));
-        circle.setOrigin(1, 1);
+        // sf::CircleShape circle(1);
+        // circle.setPosition(this->points(i, 0), this->points(i, 1));
+        // circle.setOrigin(1, 1);
 
         sf::VertexArray line(sf::Lines);
         line.append(sf::Vector2f(this->points(i, 0), this->points(i, 1)));
