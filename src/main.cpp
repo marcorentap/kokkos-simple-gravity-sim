@@ -19,7 +19,9 @@
 #define GRID_RESOLUTION 100
 #define G 1000000
 #define FORCEMAX 10
-#define OBJ_COUNT 10
+#define POINT_MASS 1
+#define OBJ_MASS 100
+#define OBJ_COUNT 2
 #define OBJ_RADIUS 10
 
 class GravityGrid : public ss::ParallelGrid {
@@ -50,16 +52,19 @@ class GravityGrid : public ss::ParallelGrid {
             Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0},
                                                    {pointCount, objectCount}),
             KOKKOS_LAMBDA(const int &i, const int &j) {
+                float objMass = objectView(j, 2);
+                float pointMass = POINT_MASS;
                 float distX = objectView(j, 0) - pointView(i, 0);
                 float distY = objectView(j, 1) - pointView(i, 1);
                 float dist =
                     Kokkos::sqrt(Kokkos::pow(distX, 2) + Kokkos::pow(distY, 2));
                 forceView(i, j, 0) = dist ? distX / dist : 0;
                 forceView(i, j, 1) = dist ? distY / dist : 0;
-                forceView(i, j, 2) = dist ? G / Kokkos::pow(dist, 2) : 0;
+                forceView(i, j, 2) = dist ? (G*objMass*pointMass) / Kokkos::pow(dist, 2) : 0;
             });
         Kokkos::deep_copy(forceHostView, forceView);
 
+        // Kokkosify, create view<[pointCount][objCount]> then sum each col to ith point
         for (int i = 0; i < pointCount; i++) {
             this->points(i, 2) = this->points(i, 0);
             this->points(i, 3) = this->points(i, 1);
@@ -92,7 +97,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < OBJ_COUNT; i++) {
         objects(i, 0) = positionRand(gen);
         objects(i, 1) = positionRand(gen);
-        objects(i, 2) = 100;
+        objects(i, 2) = OBJ_MASS;
     }
 
     int selectedObject = -1;
@@ -149,3 +154,4 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+
