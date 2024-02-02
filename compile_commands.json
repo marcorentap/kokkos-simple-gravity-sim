@@ -5,13 +5,13 @@
       "-extended-lambda",
       "-Wext-lambda-captures-this",
       "-expt-relaxed-constexpr",
-      "-arch=sm_75",
+      "-arch=sm_61",
       "-ccbin",
       "/usr/lib/ccache/c++",
       "-DKOKKOS_DEPENDENCE",
       "-DSFML_STATIC",
-      "-I/home/marcorentap/projects/simplesim-purekokkos/include",
-      "-I/home/marcorentap/projects/simplesim-purekokkos/build/_deps/sfml-src/include",
+      "-I/home/marcorentap/projects/kokkos-simple-gravity-sim/include",
+      "-I/home/marcorentap/projects/kokkos-simple-gravity-sim/build/_deps/sfml-src/include",
       "-std=c++17",
       "-Xcompiler",
       "-isystem,/usr/local/cuda/include",
@@ -20,10 +20,10 @@
       "-c",
       "-o",
       "CMakeFiles/simplesim.dir/src/main.cpp.o",
-      "/home/marcorentap/projects/simplesim-purekokkos/src/main.cpp"
+      "/home/marcorentap/projects/kokkos-simple-gravity-sim/src/main.cpp"
     ],
-    "directory": "/home/marcorentap/projects/simplesim-purekokkos/build",
-    "file": "/home/marcorentap/projects/simplesim-purekokkos/src/main.cpp",
-    "output": "/home/marcorentap/projects/simplesim-purekokkos/build/CMakeFiles/simplesim.dir/src/main.cpp.o"
+    "directory": "/home/marcorentap/projects/kokkos-simple-gravity-sim/build",
+    "file": "/home/marcorentap/projects/kokkos-simple-gravity-sim/src/main.cpp",
+    "output": "/home/marcorentap/projects/kokkos-simple-gravity-sim/build/CMakeFiles/simplesim.dir/src/main.cpp.o"
   }
 ]
