@@ -21,7 +21,7 @@
 #define FORCEMAX 10
 #define POINT_MASS 1
 #define OBJ_MASS 100
-#define OBJ_COUNT 2
+#define OBJ_COUNT 10
 #define OBJ_RADIUS 10
 
 class GravityGrid : public ss::ParallelGrid {
