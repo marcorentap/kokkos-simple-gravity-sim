@@ -19,7 +19,7 @@
 #define GRID_RESOLUTION 100
 #define G 6.674*(Kokkos::pow(10, -11))
 #define FORCESCALE 14
-#define FORCEMAX 10
+#define FORCEMAXLINE 10
 #define POINT_MASS 1
 #define OBJ_MASS 100
 #define OBJ_COUNT 10
@@ -75,8 +75,8 @@ class GravityGrid : public ss::ParallelGrid {
                 float dist =
                     Kokkos::sqrt(Kokkos::pow(unitX, 2) + Kokkos::pow(unitY, 2));
                 float force = forceHostView(i, j, 2);
-                this->points(i, 2) += unitX * Kokkos::fmin(FORCEMAX, force);
-                this->points(i, 3) += unitY * Kokkos::fmin(FORCEMAX, force);
+                this->points(i, 2) += unitX * Kokkos::fmin(FORCEMAXLINE, force);
+                this->points(i, 3) += unitY * Kokkos::fmin(FORCEMAXLINE, force);
             }
         }
         return;
