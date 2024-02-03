@@ -17,7 +17,8 @@
 #define WINDOW_SIZE_X 1000
 #define WINDOW_SIZE_Y 1000
 #define GRID_RESOLUTION 100
-#define G 1000000
+#define G 6.674*(Kokkos::pow(10, -11))
+#define FORCESCALE 14
 #define FORCEMAX 10
 #define POINT_MASS 1
 #define OBJ_MASS 100
@@ -60,7 +61,7 @@ class GravityGrid : public ss::ParallelGrid {
                     Kokkos::sqrt(Kokkos::pow(distX, 2) + Kokkos::pow(distY, 2));
                 forceView(i, j, 0) = dist ? distX / dist : 0;
                 forceView(i, j, 1) = dist ? distY / dist : 0;
-                forceView(i, j, 2) = dist ? (G*objMass*pointMass) / Kokkos::pow(dist, 2) : 0;
+                forceView(i, j, 2) = dist ? Kokkos::pow(10,FORCESCALE)*(G*objMass*pointMass) / Kokkos::pow(dist, 2) : 0;
             });
         Kokkos::deep_copy(forceHostView, forceView);
 
