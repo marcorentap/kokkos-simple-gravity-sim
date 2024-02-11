@@ -24,6 +24,7 @@
 #define OBJ_MASS 100
 #define OBJ_COUNT 10
 #define OBJ_RADIUS 10
+#define FPS_LIMIT 30
 
 class GravityGrid : public ss::ParallelGrid {
   public:
@@ -87,6 +88,7 @@ int main(int argc, char *argv[]) {
     Kokkos::ScopeGuard guard(argc, argv);
     sf::RenderWindow window(sf::VideoMode(WINDOW_SIZE_X, WINDOW_SIZE_Y),
                             "simplesim");
+    window.setFramerateLimit(FPS_LIMIT);
     GravityGrid grid(WINDOW_SIZE_X, WINDOW_SIZE_Y, GRID_RESOLUTION,
                      GRID_RESOLUTION);
     // posX, posY, mass
