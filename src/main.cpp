@@ -11,13 +11,14 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <impl/Kokkos_Profiling.hpp>
 #include <random>
 #include <vector>
 
 #define WINDOW_SIZE_X 1000
 #define WINDOW_SIZE_Y 1000
 #define GRID_RESOLUTION 100
-#define G 6.674*(Kokkos::pow(10, -11))
+#define G 6.674 * (Kokkos::pow(10, -11))
 #define FORCESCALE 14
 #define FORCEMAXLINE 10
 #define POINT_MASS 1
@@ -62,11 +63,15 @@ class GravityGrid : public ss::ParallelGrid {
                     Kokkos::sqrt(Kokkos::pow(distX, 2) + Kokkos::pow(distY, 2));
                 forceView(i, j, 0) = dist ? distX / dist : 0;
                 forceView(i, j, 1) = dist ? distY / dist : 0;
-                forceView(i, j, 2) = dist ? Kokkos::pow(10,FORCESCALE)*(G*objMass*pointMass) / Kokkos::pow(dist, 2) : 0;
+                forceView(i, j, 2) = dist ? Kokkos::pow(10, FORCESCALE) *
+                                                (G * objMass * pointMass) /
+                                                Kokkos::pow(dist, 2)
+                                          : 0;
             });
         Kokkos::deep_copy(forceHostView, forceView);
 
-        // Kokkosify, create view<[pointCount][objCount]> then sum each col to ith point
+        // Kokkosify, create view<[pointCount][objCount]> then sum each col to
+        // ith point
         for (int i = 0; i < pointCount; i++) {
             this->points(i, 2) = this->points(i, 0);
             this->points(i, 3) = this->points(i, 1);
@@ -86,6 +91,7 @@ class GravityGrid : public ss::ParallelGrid {
 
 int main(int argc, char *argv[]) {
     Kokkos::ScopeGuard guard(argc, argv);
+    Kokkos::Profiling::pushRegion("Initialize Simulation");
     sf::RenderWindow window(sf::VideoMode(WINDOW_SIZE_X, WINDOW_SIZE_Y),
                             "simplesim");
     window.setFramerateLimit(FPS_LIMIT);
@@ -102,10 +108,13 @@ int main(int argc, char *argv[]) {
         objects(i, 1) = positionRand(gen);
         objects(i, 2) = OBJ_MASS;
     }
+    Kokkos::Profiling::popRegion();
 
     int selectedObject = -1;
+    Kokkos::Profiling::pushRegion("SFML Main Loop");
     while (window.isOpen()) {
         sf::Event event;
+        Kokkos::Profiling::pushRegion("SFML Event Check");
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) {
                 window.close();
@@ -142,7 +151,9 @@ int main(int argc, char *argv[]) {
             objects(selectedObject, 0) = mousePos.x;
             objects(selectedObject, 1) = mousePos.y;
         }
+        Kokkos::Profiling::popRegion();
 
+        Kokkos::Profiling::pushRegion("SFML Frame Update");
         window.clear();
         grid.Update(objects);
         for (int i = 0; i < OBJ_COUNT; i++) {
@@ -153,8 +164,9 @@ int main(int argc, char *argv[]) {
         }
         grid.Draw(window);
         window.display();
+        Kokkos::Profiling::popRegion();
     }
+    Kokkos::Profiling::popRegion();
 
     return 0;
 }
-
