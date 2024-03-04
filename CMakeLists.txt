@@ -8,7 +8,9 @@ include(FetchContent)
 FetchContent_Declare(SFML
     GIT_REPOSITORY https://github.com/SFML/SFML.git
     GIT_TAG 2.6.x)
+message(STATUS "Fetching SFML")
 FetchContent_MakeAvailable(SFML)
+message(STATUS "Done fetching SFML")
 
 find_package(Kokkos REQUIRED)
 include_directories(include)
